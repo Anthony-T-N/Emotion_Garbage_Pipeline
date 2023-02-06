@@ -26,6 +26,11 @@ int json_creation()
     return 1;
 }
 
+int producer()
+{
+    std::string broker_ip = 1.1.1.1;
+}
+
 int main()
 {
     json_creation();
@@ -47,11 +52,13 @@ int main()
 
 Kafka_Emotion_Garbage_Producer -> Kafka Instance -> Consumer
 
+Producer generates json -> Use script to push json into Kafka
+
 Sample Json
 {
     "name": "John Doe",
     "emotion":  "Happy"
-    "physical state": "Happy"
+    "physical state": "Idle"
     "source":
 }
 
