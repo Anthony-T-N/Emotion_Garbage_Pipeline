@@ -1,8 +1,12 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <string>
 
 #include "simdjson.h"
+
+#include "json.hpp"
+
 
 //Lessons:
 // Mistake 1: Manually copied and pasted raw contents of "simdjson.cpp" into new file named that.
@@ -16,19 +20,27 @@ int json_creation()
     simdjson::ondemand::document doc = parser.iterate(json);
     std::cout << uint64_t(doc["name"]["emotion"]) << " results." << std::endl;
     return 1;
-    **/
+
 
     simdjson::ondemand::parser parser;
+    // Opens file.
     simdjson::padded_string json = simdjson::padded_string::load("twitter.json");
     simdjson::ondemand::document tweets = parser.iterate(json);
+    uint64_t identifier = tweets["statuses"].at(0)["id"];
+    std::cout << identifier << std::endl;
+    return EXIT_SUCCESS;
+    /*
     std::cout << uint64_t(tweets["search_metadata"]["count"]) << " results." << std::endl;
+    */
+
+    std::ifstream f("sample_profile.json");
+    nlohmann::json data = nlohmann::json::parse(f);
+    std::string s = data.dump();
+    std::cout << s << "\n";
 
     return 1;
-}
 
-int producer()
-{
-    std::string broker_ip = 1.1.1.1;
+
 }
 
 int main()
@@ -52,13 +64,11 @@ int main()
 
 Kafka_Emotion_Garbage_Producer -> Kafka Instance -> Consumer
 
-Producer generates json -> Use script to push json into Kafka
-
 Sample Json
 {
     "name": "John Doe",
     "emotion":  "Happy"
-    "physical state": "Idle"
+    "physical state": "Happy"
     "source":
 }
 
