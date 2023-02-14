@@ -108,6 +108,8 @@ int json_publish()
     std::string current_filepath = std::filesystem::current_path().string();
     for (const auto& entry : std::filesystem::directory_iterator(current_filepath))
     {
+        current_json_path = "";
+        std::string command = "";
         std::cout << entry.path() << std::endl;
         if (entry.path().string().find(".json") != std::string::npos)
         {
@@ -119,39 +121,33 @@ int json_publish()
             if (parsed_file.at("emotion") == "Happy")
             {
                 std::cout << "Key: Happy" << "\n";
-                std::string command = "bin/kafka-console-producer.sh --broker-list localhost:9092 --topic emotion_happy < " 
+                command = "bin/kafka-console-producer.sh --broker-list localhost:9092 --topic emotion_happy < " 
                     + entry.path().string();
-                system("echo \"Sanity Check\"");
-                system(command.c_str());
-                //std::filesystem::remove(entry.path().string());
-                command = "rm " + entry.path().string().substr(0, entry.path().string().find_last_of("/") + 1);
-                std::cout << "command: " + command << "\n";
-                system(command.c_str());
             }
             else if (parsed_file.at("emotion") == "Sad")
             {
                 std::cout << "Key: Sad" << "\n";
-                std::string command = "bin/kafka-console-producer.sh --broker-list localhost:9092 --topic emotion_sad < "
+                command = "bin/kafka-console-producer.sh --broker-list localhost:9092 --topic emotion_sad < "
                     + entry.path().string();
-                system("echo \"Sanity Check\"");
-                system(command.c_str());
-                //std::filesystem::remove(entry.path().string());
-                command = "rm " + entry.path().string().substr(0, entry.path().string().find_last_of("/") + 1);
-                std::cout << "command: " + command << "\n";
-                system(command.c_str());
             }
             else
             {
                 std::cout << "Not an emotion of interest" << "\n";
-                std::string command = "bin/kafka-console-producer.sh --broker-list localhost:9092 --topic emotion_irrelevant < "
+                command = "bin/kafka-console-producer.sh --broker-list localhost:9092 --topic emotion_irrelevant < "
                     + entry.path().string();
-                system("echo \"Sanity Check\"");
-                system(command.c_str());
-                //std::filesystem::remove(entry.path().string());
-                command = "rm " + entry.path().string().substr(entry.path().string().find_last_of("/\\") + 1);
-                std::cout << "command: " + command << "\n";
-                system(command.c_str());
             }
+            system("echo \"Sanity Check\"");
+            system(command.c_str());
+        }
+        // Strange bug that can only be resolved by repeating identical IF statment.
+        // Sharing violation error 
+        if (entry.path().string().find(".json") != std::string::npos)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            //std::filesystem::remove(entry.path().string());
+            command = "del " + entry.path().string().substr(entry.path().string().find_last_of("/\\") + 1);
+            std::cout << "[-] Deleting: " + command << "\n";
+            system(command.c_str());
             std::cout << "\n";
         }
     }
