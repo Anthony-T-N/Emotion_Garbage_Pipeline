@@ -12,7 +12,8 @@
 #pragma warning(disable:4996)
 
 std::vector<std::string> physical_states = { "Moving", "Idle" };
-std::vector<std::string> primary_emotions = { "\033[93mHappy", "\033[36mSad", "\033[91mAnger", "\033[95mFear", "\033[92mDisgust", "\033[96mSurprise" };
+//std::vector<std::string> primary_emotions = { "\033[93mHappy", "\033[36mSad", "\033[91mAnger", "\033[95mFear", "\033[92mDisgust", "\033[96mSurprise" };
+std::vector<std::string> primary_emotions = { "Happy", "Sad", "Anger", "Fear", "Disgust", "Surprise" };
 
 //Lessons:
 // Mistake 1: Manually copied and pasted raw contents of "simdjson.cpp" into new file named that.
@@ -77,7 +78,7 @@ int json_creation()
         nlohmann::json new_json;
         new_json["time"] = get_current_date();
         new_json["name"] = loaded_name_vector[rand() % line_cout];
-        new_json["emotion"] = primary_emotions[rand() % primary_emotions.size()] + "\033[0m";
+        new_json["emotion"] = primary_emotions[rand() % primary_emotions.size()];
         new_json["physical state"] = physical_states[rand() % physical_states.size()];
         new_json["source"] = "Device" + std::to_string(rand() % 100);
         std::cout << new_json << "\n";
@@ -92,6 +93,67 @@ int json_creation()
         */
         i++;
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    }
+    return 1;
+}
+
+int json_publish()
+{
+    /*
+    Read current directory to locate files containing the ".json" file extension. When located, parse file using json library
+    to identify the key "emotion" and check whether the value of key is "Happy". If so, run command to use script to publish 
+    json file to Kafka broker under the topic "emotion_happy". 
+    */
+    std::string current_json_path = "";
+    std::string current_filepath = std::filesystem::current_path().string();
+    for (const auto& entry : std::filesystem::directory_iterator(current_filepath))
+    {
+        std::cout << entry.path() << std::endl;
+        if (entry.path().string().find(".json") != std::string::npos)
+        {
+            current_json_path = entry.path().string();
+            std::cout << current_json_path << "\n";
+            std::ifstream loaded_file(current_json_path);
+            nlohmann::json parsed_file = nlohmann::json::parse(loaded_file);
+            std::cout << parsed_file.at("emotion") << '\n';
+            if (parsed_file.at("emotion") == "Happy")
+            {
+                std::cout << "Key: Happy" << "\n";
+                std::string command = "bin/kafka-console-producer.sh --broker-list localhost:9092 --topic emotion_happy < " 
+                    + entry.path().string();
+                system("echo \"Sanity Check\"");
+                system(command.c_str());
+                //std::filesystem::remove(entry.path().string());
+                command = "rm " + entry.path().string().substr(0, entry.path().string().find_last_of("/") + 1);
+                std::cout << "command: " + command << "\n";
+                system(command.c_str());
+            }
+            else if (parsed_file.at("emotion") == "Sad")
+            {
+                std::cout << "Key: Sad" << "\n";
+                std::string command = "bin/kafka-console-producer.sh --broker-list localhost:9092 --topic emotion_sad < "
+                    + entry.path().string();
+                system("echo \"Sanity Check\"");
+                system(command.c_str());
+                //std::filesystem::remove(entry.path().string());
+                command = "rm " + entry.path().string().substr(0, entry.path().string().find_last_of("/") + 1);
+                std::cout << "command: " + command << "\n";
+                system(command.c_str());
+            }
+            else
+            {
+                std::cout << "Not an emotion of interest" << "\n";
+                std::string command = "bin/kafka-console-producer.sh --broker-list localhost:9092 --topic emotion_irrelevant < "
+                    + entry.path().string();
+                system("echo \"Sanity Check\"");
+                system(command.c_str());
+                //std::filesystem::remove(entry.path().string());
+                command = "rm " + entry.path().string().substr(entry.path().string().find_last_of("/\\") + 1);
+                std::cout << "command: " + command << "\n";
+                system(command.c_str());
+            }
+            std::cout << "\n";
+        }
     }
     return 1;
 }
@@ -111,7 +173,8 @@ int main()
     std::cout << "- Current location of executable: " << std::filesystem::current_path() << "\n";
     std::cout << "=======================================" << "\n\n";
 
-    json_creation();
+    //json_creation();
+    json_publish();
     
     /*
     int i = 0;
