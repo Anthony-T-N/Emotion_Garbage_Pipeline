@@ -5,6 +5,8 @@
 #include <chrono>
 #include <thread>
 
+#include <kafka/KafkaProducer.h>
+
 //#include "simdjson.h"
 
 #include "json.hpp"
@@ -63,7 +65,6 @@ int json_creation()
             return 1;
         }
         input_file.open("first-names.txt");
-        std::cout << "[+] Opened first-names.txt successfully;" << "\n\n";
 
         // Store as vector or read again.
         std::string input_file_line;
@@ -156,8 +157,15 @@ int json_publish()
 
 int producer()
 {
-    std::string broker_ip = "1.1.1.1";
-    return 1;
+    using namespace kafka;
+    using namespace kafka::clients::producer;
+
+    const std::string brokers = getenv("KAFKA_BROKER_LIST");
+    const Topic topic = getenv("TEST_TOPIC");
+
+    const Properties props({ {"bootstrap.servers", brokers} });
+
+    KafkaProducer producer(props);
 }
 
 int main()
