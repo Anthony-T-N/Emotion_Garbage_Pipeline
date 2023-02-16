@@ -33,7 +33,7 @@ std::string get_current_date()
     return buffer;
 }
 
-int json_creation()
+nlohmann::json json_creation()
 {
     /**
     simdjson::ondemand::parser parser;
@@ -53,49 +53,44 @@ int json_creation()
     /*
     std::cout << uint64_t(tweets["search_metadata"]["count"]) << " results." << std::endl;
     */
-    int i = 0;
-    while (i != 10)
+    std::vector<std::string> loaded_name_vector;
+    std::ifstream input_file;
+    std::cout << "[!] Opening first-names.txt for reading;" << "\n";
+    if (std::filesystem::exists("first-names.txt") == false)
     {
-        std::vector<std::string> loaded_name_vector;
-        std::ifstream input_file;
-        std::cout << "[!] Opening first-names.txt for reading;" << "\n";
-        if (std::filesystem::exists("first-names.txt") == false)
-        {
-            std::cout << "\033[4;31m" << "[-] Unable to open first-names.txt;" << "\033[0m" << "\n";
-            return 1;
-        }
-        input_file.open("first-names.txt");
-
-        // Store as vector or read again.
-        std::string input_file_line;
-        int line_cout = 0;
-        while (std::getline(input_file, input_file_line))
-        {
-            loaded_name_vector.push_back(input_file_line);
-            line_cout++;
-        }
-
-        // Fields
-        nlohmann::json new_json;
-        new_json["time"] = get_current_date();
-        new_json["name"] = loaded_name_vector[rand() % line_cout];
-        new_json["emotion"] = primary_emotions[rand() % primary_emotions.size()];
-        new_json["physical state"] = physical_states[rand() % physical_states.size()];
-        new_json["source"] = "Device" + std::to_string(rand() % 100);
-        std::cout << new_json << "\n";
-
-        std::ofstream file(get_current_date() + "-emotion_event.json");
-        file << new_json;
-
-        /*
-        std::ifstream loaded_file("sample_profile.json");
-        nlohmann::json parsed_file = nlohmann::json::parse(loaded_file);
-        std::cout << parsed_file.dump() << "\n";
-        */
-        i++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::cout << "\033[4;31m" << "[-] Unable to open first-names.txt;" << "\033[0m" << "\n";
+        return 1;
     }
-    return 1;
+    input_file.open("first-names.txt");
+
+    // Store as vector or read again.
+    std::string input_file_line;
+    int line_cout = 0;
+    while (std::getline(input_file, input_file_line))
+    {
+        loaded_name_vector.push_back(input_file_line);
+        line_cout++;
+    }
+
+    // Fields
+    nlohmann::json new_json;
+    new_json["time"] = get_current_date();
+    new_json["name"] = loaded_name_vector[rand() % line_cout];
+    new_json["emotion"] = primary_emotions[rand() % primary_emotions.size()];
+    new_json["physical state"] = physical_states[rand() % physical_states.size()];
+    new_json["source"] = "Device" + std::to_string(rand() % 100);
+    std::cout << new_json << "\n";
+
+    std::ofstream file(get_current_date() + "-emotion_event.json");
+    //file << new_json;
+
+    /*
+    std::ifstream loaded_file("sample_profile.json");
+    nlohmann::json parsed_file = nlohmann::json::parse(loaded_file);
+    std::cout << parsed_file.dump() << "\n";
+    */
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    return new_json;
 }
 
 int json_publish()
@@ -155,17 +150,21 @@ int json_publish()
     return 1;
 }
 
-int producer()
+int producer(nlohmann::json json_record)
 {
     using namespace kafka;
     using namespace kafka::clients::producer;
 
-    const std::string brokers = getenv("KAFKA_BROKER_LIST");
+    std::string broker_ip = "192.168.1.1:9092";
+
+    const std::string broker_ip = getenv("KAFKA_BROKER_LIST");
     const Topic topic = getenv("TEST_TOPIC");
 
-    const Properties props({ {"bootstrap.servers", brokers} });
+    const Properties props({ {"bootstrap.servers", broker_ip} });
 
     KafkaProducer producer(props);
+
+    ProducerRecord record(topic, NullKey, Value(line.c_str(), line.size()));
 }
 
 int main()
@@ -177,8 +176,8 @@ int main()
     std::cout << "- Current location of executable: " << std::filesystem::current_path() << "\n";
     std::cout << "=======================================" << "\n\n";
 
-    //json_creation();
-    json_publish();
+    //json_publish();
+    producer(json_creation());
     
     /*
     int i = 0;
