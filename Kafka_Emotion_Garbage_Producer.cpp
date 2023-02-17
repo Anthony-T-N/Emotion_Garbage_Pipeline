@@ -164,7 +164,17 @@ int producer(nlohmann::json json_record)
 
     KafkaProducer producer(props);
 
-    ProducerRecord record(topic, NullKey, Value(line.c_str(), line.size()));
+    // Convert JSON to record for producer.
+    ProducerRecord record(topic, NullKey, Value(json_record.c_str(), json_record.size()));
+
+    auto deliveryCb = [](const RecordMetadata& metadata, const Error& error) {
+        if (!error) {
+            std::cout << "Message delivered: " << metadata.toString() << std::endl;
+        }
+        else {
+            std::cerr << "Message failed to be delivered: " << error.message() << std::endl;
+        }
+    };
 }
 
 int main()
