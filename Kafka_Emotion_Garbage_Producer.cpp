@@ -155,19 +155,24 @@ int producer(nlohmann::json json_record)
     using namespace kafka;
     using namespace kafka::clients::producer;
 
-    std::string broker_ip = "192.168.1.1:9092";
+    std::cout << "producer()" << "\n";
 
-    const std::string broker_ip = getenv("KAFKA_BROKER_LIST");
-    const Topic topic = getenv("TEST_TOPIC");
+    // Environment Variable = KAFKA_BROKER_LIST
+
+    const std::string broker_ip = "192.168.1.1:9092";
+    const Topic topic = "TEST_TOPIC";
 
     const Properties props({ {"bootstrap.servers", broker_ip} });
 
     KafkaProducer producer(props);
 
-    // Convert JSON to record for producer.
-    ProducerRecord record(topic, NullKey, Value(json_record.c_str(), json_record.size()));
+    std::cout << json_record.dump() << "\n";
 
-    auto deliveryCb = [](const RecordMetadata& metadata, const Error& error) {
+    // Convert JSON to record for producer.
+    ProducerRecord record(topic, NullKey, Value(json_record.dump().c_str(), json_record.dump().size()));
+
+    auto deliveryCb = [](const RecordMetadata& metadata, const Error& error) 
+    {
         if (!error) {
             std::cout << "Message delivered: " << metadata.toString() << std::endl;
         }
@@ -175,6 +180,10 @@ int producer(nlohmann::json json_record)
             std::cerr << "Message failed to be delivered: " << error.message() << std::endl;
         }
     };
+
+    producer.send(record, deliveryCb);
+
+    producer.close();
 }
 
 int main()
