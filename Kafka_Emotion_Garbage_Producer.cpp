@@ -159,17 +159,20 @@ int producer(nlohmann::json json_record)
 
     // Environment Variable = KAFKA_BROKER_LIST
 
-    const std::string broker_ip = "192.168.1.1:9092";
+    const std::string broker_ip = "192.168.1.119:9092";
     const Topic topic = "TEST_TOPIC";
 
     const Properties props({ {"bootstrap.servers", broker_ip} });
 
     KafkaProducer producer(props);
 
+    std::cout << "JSON_Record_Dump" << "\n";
     std::cout << json_record.dump() << "\n";
 
     // Convert JSON to record for producer.
     ProducerRecord record(topic, NullKey, Value(json_record.dump().c_str(), json_record.dump().size()));
+    
+    // nc -vz 192.168.1.119 9092
 
     auto deliveryCb = [](const RecordMetadata& metadata, const Error& error) 
     {
@@ -184,6 +187,8 @@ int producer(nlohmann::json json_record)
     producer.send(record, deliveryCb);
 
     producer.close();
+
+    return 1;
 }
 
 int main()
