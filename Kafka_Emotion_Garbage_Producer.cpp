@@ -82,6 +82,7 @@ nlohmann::json json_creation()
     std::cout << new_json << "\n";
 
     std::ofstream file(get_current_date() + "-emotion_event.json");
+    // File can be created if required.
     //file << new_json;
 
     /*
@@ -152,6 +153,8 @@ int json_publish()
 
 int producer(nlohmann::json json_record)
 {
+    // Method works when executable placed/runs locally with server/host running with the Kafka.
+    // Host <--/--> Guest
     using namespace kafka;
     using namespace kafka::clients::producer;
 
@@ -227,7 +230,7 @@ Kafka_Emotion_Garbage_Producer -> Kafka Instance -> Consumer
 Sample Json
 {
     "name": "John Doe",
-    "emotion":  "Happy"
+    "emotion": "Happy"
     "physical state": "Idle"
     "source": "Device02"
 }
