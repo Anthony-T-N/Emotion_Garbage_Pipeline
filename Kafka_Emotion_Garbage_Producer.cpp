@@ -176,6 +176,9 @@ int producer(nlohmann::json json_record)
     ProducerRecord record(topic, NullKey, Value(json_record.dump().c_str(), json_record.dump().size()));
     
     // nc -vz 192.168.1.119 9092
+    // Kafka listeners configuration
+    // server.properties
+    // listeners=PLAINTEXT://192.168.1.119:9092
 
     auto deliveryCb = [](const RecordMetadata& metadata, const Error& error) 
     {
