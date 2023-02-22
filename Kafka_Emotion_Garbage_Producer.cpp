@@ -180,6 +180,9 @@ int producer(nlohmann::json json_record)
     // server.properties
     // listeners=PLAINTEXT://192.168.1.119:9092
 
+    // telnet 192.168.1.119 9092
+    // .\ncat.exe -v 192.168.1.119 -p 9092
+
     auto deliveryCb = [](const RecordMetadata& metadata, const Error& error) 
     {
         if (!error) {
