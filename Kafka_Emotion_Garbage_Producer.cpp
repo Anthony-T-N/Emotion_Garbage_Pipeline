@@ -33,7 +33,7 @@ std::string get_current_date()
     return buffer;
 }
 
-nlohmann::json json_creation()
+nlohmann::json emotion_event_creation()
 {
     /**
     simdjson::ondemand::parser parser;
@@ -73,17 +73,17 @@ nlohmann::json json_creation()
     }
 
     // Fields
-    nlohmann::json new_json;
-    new_json["time"] = get_current_date();
-    new_json["name"] = loaded_name_vector[rand() % line_cout];
-    new_json["emotion"] = primary_emotions[rand() % primary_emotions.size()];
-    new_json["physical state"] = physical_states[rand() % physical_states.size()];
-    new_json["source"] = "Device" + std::to_string(rand() % 100);
-    std::cout << new_json << "\n";
+    nlohmann::json emotion_event;
+    emotion_event["time"] = get_current_date();
+    emotion_event["name"] = loaded_name_vector[rand() % line_cout];
+    emotion_event["emotion"] = primary_emotions[rand() % primary_emotions.size()];
+    emotion_event["physical state"] = physical_states[rand() % physical_states.size()];
+    emotion_event["source"] = "Device" + std::to_string(rand() % 100);
+    std::cout << emotion_event << "\n";
 
     std::ofstream file(get_current_date() + "-emotion_event.json");
     // File can be created if required.
-    //file << new_json;
+    //file << emotion_event;
 
     /*
     std::ifstream loaded_file("sample_profile.json");
@@ -91,7 +91,7 @@ nlohmann::json json_creation()
     std::cout << parsed_file.dump() << "\n";
     */
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    return new_json;
+    return emotion_event;
 }
 
 int json_publish()
@@ -106,7 +106,7 @@ int json_publish()
     for (const auto& entry : std::filesystem::directory_iterator(current_filepath))
     {
         current_json_path = "";
-        std::string command = "";
+        std::string publish_command = "";
         std::cout << entry.path() << std::endl;
         if (entry.path().string().find(".json") != std::string::npos)
         {
@@ -115,26 +115,27 @@ int json_publish()
             std::ifstream loaded_file(current_json_path);
             nlohmann::json parsed_file = nlohmann::json::parse(loaded_file);
             std::cout << parsed_file.at("emotion") << '\n';
+            publish_command = "bin/kafka-console-producer.sh --broker-list localhost:9092 --topic ";
             if (parsed_file.at("emotion") == "Happy")
             {
                 std::cout << "Key: Happy" << "\n";
-                command = "bin/kafka-console-producer.sh --broker-list localhost:9092 --topic emotion_happy < " 
+                publish_command += "emotion_happy < "
                     + entry.path().string();
             }
             else if (parsed_file.at("emotion") == "Sad")
             {
                 std::cout << "Key: Sad" << "\n";
-                command = "bin/kafka-console-producer.sh --broker-list localhost:9092 --topic emotion_sad < "
+                publish_command += "emotion_sad < "
                     + entry.path().string();
             }
             else
             {
                 std::cout << "Not an emotion of interest" << "\n";
-                command = "bin/kafka-console-producer.sh --broker-list localhost:9092 --topic emotion_irrelevant < "
+                publish_command += "emotion_irrelevant < "
                     + entry.path().string();
             }
             system("echo \"Sanity Check\"");
-            system(command.c_str());
+            system(publish_command.c_str());
         }
         // Strange bug that can only be resolved by repeating identical IF statment.
         // Sharing violation error 
@@ -142,19 +143,17 @@ int json_publish()
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             //std::filesystem::remove(entry.path().string());
-            command = "del " + entry.path().string().substr(entry.path().string().find_last_of("/\\") + 1);
-            std::cout << "[-] Deleting: " + command << "\n";
-            system(command.c_str());
+            publish_command = "del " + entry.path().string().substr(entry.path().string().find_last_of("/\\") + 1);
+            std::cout << "[-] Deleting: " + publish_command << "\n";
+            system(publish_command.c_str());
             std::cout << "\n";
         }
     }
     return 1;
 }
 
-int producer(nlohmann::json json_record)
+int kafka_direct_producer(nlohmann::json json_record)
 {
-    // Method works when executable placed/runs locally with server/host running with the Kafka.
-    // Host <--/--> Guest
     using namespace kafka;
     using namespace kafka::clients::producer;
 
@@ -163,25 +162,48 @@ int producer(nlohmann::json json_record)
     // Environment Variable = KAFKA_BROKER_LIST
 
     const std::string broker_ip = "192.168.1.119:9092";
-    const Topic topic = "TEST_TOPIC";
+
+    Topic topic = "Placeholder";
+
+    std::cout << "JSON_Record_Dump" << "\n";
+    std::cout << json_record.dump() << "\n";
+    std::cout << json_record.at("emotion") << '\n';
+
+    if (json_record.at("emotion") == "Happy")
+    {
+        std::cout << "Key: Happy" << "\n";
+        topic = "emotion_happy";
+    }
+    else if (json_record.at("emotion") == "Sad")
+    {
+        std::cout << "Key: Sad" << "\n";
+        topic = "emotion_sad";
+    }
+    else
+    {
+        std::cout << "Not an emotion of interest" << "\n";
+        topic = "emotion_irrelevant";
+    }
 
     const Properties props({ {"bootstrap.servers", broker_ip} });
 
     KafkaProducer producer(props);
 
-    std::cout << "JSON_Record_Dump" << "\n";
-    std::cout << json_record.dump() << "\n";
-
     // Convert JSON to record for producer.
     ProducerRecord record(topic, NullKey, Value(json_record.dump().c_str(), json_record.dump().size()));
     
-    // nc -vz 192.168.1.119 9092
     // Kafka listeners configuration
     // server.properties
     // listeners=PLAINTEXT://192.168.1.119:9092
 
+    // Connectivity Testing:
     // telnet 192.168.1.119 9092
     // .\ncat.exe -v 192.168.1.119 -p 9092
+    // nc -vz 192.168.1.119 9092
+
+    // Enable Connectivity:
+    // 1) Configure firewall on both guest and host to allow communication.
+    // 2) Configure Kafka broker's server.properties file to listen
 
     auto deliveryCb = [](const RecordMetadata& metadata, const Error& error) 
     {
@@ -192,11 +214,8 @@ int producer(nlohmann::json json_record)
             std::cerr << "Message failed to be delivered: " << error.message() << std::endl;
         }
     };
-
     producer.send(record, deliveryCb);
-
     producer.close();
-
     return 1;
 }
 
@@ -210,7 +229,10 @@ int main()
     std::cout << "=======================================" << "\n\n";
 
     //json_publish();
-    producer(json_creation());
+    for (int i = 0; i <= 10; i++)
+    {
+        kafka_direct_producer(emotion_event_creation());
+    }
     
     /*
     int i = 0;
