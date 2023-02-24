@@ -13,8 +13,7 @@
 
 #pragma warning(disable:4996)
 
-std::vector<std::string> physical_states = { "Moving", "Idle" };
-//std::vector<std::string> primary_emotions = { "\033[93mHappy", "\033[36mSad", "\033[91mAnger", "\033[95mFear", "\033[92mDisgust", "\033[96mSurprise" };
+std::vector<std::string> movement_states = { "Moving", "Idle" };
 std::vector<std::string> primary_emotions = { "Happy", "Sad", "Anger", "Fear", "Disgust", "Surprise" };
 
 //Lessons:
@@ -77,7 +76,7 @@ nlohmann::json emotion_event_creation()
     emotion_event["time"] = get_current_date();
     emotion_event["name"] = loaded_name_vector[rand() % line_cout];
     emotion_event["emotion"] = primary_emotions[rand() % primary_emotions.size()];
-    emotion_event["physical state"] = physical_states[rand() % physical_states.size()];
+    emotion_event["physical state"] = movement_states[rand() % movement_states.size()];
     emotion_event["source"] = "Device" + std::to_string(rand() % 100);
     std::cout << emotion_event << "\n";
 
@@ -233,19 +232,6 @@ int main()
     {
         kafka_direct_producer(emotion_event_creation());
     }
-    
-    /*
-    int i = 0;
-    while (true)
-    {
-        i++;
-        std::cout << primary_emotions[rand() % primary_emotions.size()] + "\033[0m" << "\n";
-        if (i == 20)
-        {
-            break;
-        }
-    }
-    */
     std::cout << "[!] END" << "\n";
     std::cout << "[!] Exiting..." << "\n\n";
     system("pause");
@@ -262,9 +248,6 @@ Sample Json
     "physical state": "Idle"
     "source": "Device02"
 }
-
-- Created Json -> SFTP to testing enviroment -> Send Json to Kafka broker.
-
 
 // Create topics for Kafka broker.
 $ bin/kafka-topics.sh --create --topic emotion_happy --bootstrap-server localhost:9092
