@@ -93,7 +93,7 @@ nlohmann::json emotion_event_creation()
     return emotion_event;
 }
 
-int json_publish()
+void json_publish()
 {
     /*
     Read current directory to locate files containing the ".json" file extension. When located, parse file using json library
@@ -148,10 +148,9 @@ int json_publish()
             std::cout << "\n";
         }
     }
-    return 1;
 }
 
-int kafka_direct_producer(nlohmann::json json_record)
+void kafka_direct_producer(nlohmann::json json_record)
 {
     using namespace kafka;
     using namespace kafka::clients::producer;
@@ -215,7 +214,14 @@ int kafka_direct_producer(nlohmann::json json_record)
     };
     producer.send(record, deliveryCb);
     producer.close();
-    return 1;
+}
+
+void json_debug(nlohmann::json json_record)
+{
+    std::cout << "JSON_Record_Dump" << "\n";
+    std::cout << json_record.dump() << "\n";
+    std::cout << json_record.at("emotion") << '\n';
+    std::cout << json_record.dump().c_str() << "\n";
 }
 
 int main()
@@ -228,10 +234,14 @@ int main()
     std::cout << "=======================================" << "\n\n";
 
     //json_publish();
+    json_debug(emotion_event_creation());
+
+    /**
     for (int i = 0; i <= 10; i++)
     {
         kafka_direct_producer(emotion_event_creation());
     }
+    **/
     std::cout << "[!] END" << "\n";
     std::cout << "[!] Exiting..." << "\n\n";
     system("pause");
