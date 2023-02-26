@@ -74,10 +74,10 @@ nlohmann::json emotion_event_creation()
     // Fields
     nlohmann::json emotion_event;
     emotion_event["time"] = get_current_date();
-    emotion_event["name"] = loaded_name_vector[rand() % line_cout];
-    emotion_event["emotion"] = primary_emotions[rand() % primary_emotions.size()];
-    emotion_event["physical state"] = movement_states[rand() % movement_states.size()];
-    emotion_event["source"] = "Device" + std::to_string(rand() % 100);
+    emotion_event["name"] = loaded_name_vector[rand() & 0x10 % line_cout];
+    emotion_event["emotion"] = primary_emotions[rand() & 0x10 % primary_emotions.size()];
+    emotion_event["physical state"] = movement_states[rand() & 0x10 % movement_states.size()];
+    emotion_event["source"] = "Device" + std::to_string(rand() & 0x10 % 100);
     std::cout << emotion_event << "\n";
 
     std::ofstream file(get_current_date() + "-emotion_event.json");
