@@ -43,12 +43,15 @@ int main()
     // Subscribe to topics
     consumer.subscribe({ topic });
 
-    while (running) {
+    while (running) 
+    {
         // Poll messages from Kafka brokers
         auto records = consumer.poll(std::chrono::milliseconds(100));
 
-        for (const auto& record : records) {
-            if (!record.error()) {
+        for (const auto& record : records) 
+        {
+            if (!record.error()) 
+            {
                 std::cout << "Got a new message..." << std::endl;
                 std::cout << "    Topic    : " << record.topic() << std::endl;
                 std::cout << "    Partition: " << record.partition() << std::endl;
@@ -58,7 +61,8 @@ int main()
                 std::cout << "    Key   [" << record.key().toString() << "]" << std::endl;
                 std::cout << "    Value [" << record.value().toString() << "]" << std::endl;
             }
-            else {
+            else 
+            {
                 std::cerr << record.toString() << std::endl;
             }
         }
