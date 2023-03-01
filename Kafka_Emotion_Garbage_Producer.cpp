@@ -188,7 +188,8 @@ void kafka_direct_producer(nlohmann::json json_record)
     KafkaProducer producer(props);
 
     // Convert JSON to record for producer.
-    ProducerRecord record(topic, NullKey, Value(json_record.dump().c_str(), json_record.dump().size()));
+    std::string json_dump = "";
+    ProducerRecord record(topic, NullKey, Value(json_dump, json_dump.size()));
     
     // Kafka listeners configuration
     // server.properties
